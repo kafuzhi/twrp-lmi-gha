@@ -15,8 +15,8 @@ on:
         description: 'Device tree branch (sekaiacg/android_device_xiaomi_umi_TWRP)'
         default: 'android-13'
       decrypt_platform:
-        description: 'DECRYPT_PLATFORM_VERSION (empty = tree default: 14)'
-        default: ''
+        description: 'DECRYPT_PLATFORM_VERSION（安卓平台版本：15=原来给 A15 ROM 的，17=给 A17 ROM）'
+        default: '17'
       manifest_url:
         description: 'Manifest git URL (official minimal-manifest, or a fork for twrp-15/twrp-16 experiments)'
         default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
