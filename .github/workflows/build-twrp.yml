@@ -17,9 +17,9 @@ on:
       decrypt_platform:
         description: 'DECRYPT_PLATFORM_VERSION (empty = tree default: 14)'
         default: ''
-      fbev2:
-        description: 'TW_USE_FBEV2 (true/false)'
-        default: 'false'
+      manifest_url:
+        description: 'Manifest git URL (official minimal-manifest, or a fork for twrp-15/twrp-16 experiments)'
+        default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
       skkk_ver:
         description: 'TW_SKKK_VER_CODE (optional, empty = not set)'
         default: ''
@@ -40,6 +40,12 @@ jobs:
     runs-on: ubuntu-22.04
     # GitHub-hosted hard limit is 6h; -j4 on a 4 vCPU runner lands well below it.
     timeout-minutes: 350
+    name: build-${{ matrix.variant }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # skkk 每个 ROM 代次发两个包：..._A15-lmi-skkk.img 与 ..._A15_FBEv2-lmi-skkk.img
+        variant: [miui, aosp]
 
     steps:
       - name: Free disk space
@@ -98,7 +104,7 @@ jobs:
 
           mkdir -p "$GITHUB_WORKSPACE/twrp"
           cd "$GITHUB_WORKSPACE/twrp"
-          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b "$BRANCH"
+          repo init --depth=1 -u "${{ inputs.manifest_url }}" -b "$BRANCH"
           repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags
           du -sh .repo
           # 一次性构建用不到 repo 的元数据/git 历史，删掉给 out/ 腾 6-8 GB
@@ -120,7 +126,7 @@ jobs:
         env:
           DEVICE: ${{ inputs.device }}
           DECRYPT_PLATFORM: ${{ inputs.decrypt_platform }}
-          FBEV2: ${{ inputs.fbev2 }}
+          VARIANT: ${{ matrix.variant }}
           SKKK_VER: ${{ inputs.skkk_ver }}
         run: |
           set -eo pipefail   # envsetup.sh 有未定义变量，-u 会让它在 line 877 直接退出
@@ -129,7 +135,7 @@ jobs:
           export LC_ALL=C
           export TW_DEFAULT_LANGUAGE=zh_CN
           if [ -n "$DECRYPT_PLATFORM" ]; then export DECRYPT_PLATFORM_VERSION="$DECRYPT_PLATFORM"; fi
-          if [ -n "$FBEV2" ]; then export TW_USE_FBEV2="$FBEV2"; fi
+          if [ "$VARIANT" = "aosp" ]; then export TW_USE_FBEV2=true; fi   # FBEv2：AOSP/类原生 ROM 解密
           if [ -n "$SKKK_VER" ]; then export TW_SKKK_VER_CODE="$SKKK_VER"; fi
           unset USE_CCACHE   # ccache cannot survive between runs; it only eats disk here
           . build/envsetup.sh
@@ -155,7 +161,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: twrp-${{ inputs.device }}-${{ inputs.twrp_branch }}-${{ inputs.device_branch }}${{ inputs.fbev2 == 'true' && '-fbev2' || '' }}
+          name: twrp-${{ inputs.device }}-${{ inputs.twrp_branch }}-${{ matrix.variant }}
           path: ${{ github.workspace }}/twrp/out/target/product/*/recovery.img
           if-no-files-found: error
           compression-level: 0
@@ -165,7 +171,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log-${{ inputs.device }}
+          name: build-log-${{ inputs.device }}-${{ matrix.variant }}
           path: |
             ${{ github.workspace }}/twrp/build.log
             ${{ github.workspace }}/twrp/out/verbose.log.gz
