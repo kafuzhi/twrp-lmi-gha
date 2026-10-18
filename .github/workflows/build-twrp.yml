@@ -31,7 +31,7 @@ on:
         default: 'https://gerrit.googlesource.com/git-repo'
 
 concurrency:
-  group: build-twrp-${{ inputs.device }}
+  group: build-twrp-${{ inputs.device }}-${{ inputs.twrp_branch }}
   cancel-in-progress: false
 
 jobs:
