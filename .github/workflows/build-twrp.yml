@@ -20,6 +20,9 @@ on:
       manifest_url:
         description: 'Manifest git URL (official minimal-manifest, or a fork for twrp-15/twrp-16 experiments)'
         default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
+      restore_magiskpatch:
+        description: '把 skkk 2022 年删掉的 /magiskpatch（TWRP 内直接 patch boot，含去 dm/avb-verity）从历史提交捞回来'
+        default: 'true'
       no_avb:
         description: '关掉 AVB（不签名、不填充到分区大小，出裸 recovery.img）'
         default: 'true'
@@ -133,6 +136,15 @@ jobs:
           # sanity: the product for the chosen device must exist
           grep -q "twrp_${{ inputs.device }}.mk" device/xiaomi/umi/AndroidProducts.mk \
             || { echo "::error::device/xiaomi/umi has no twrp_${{ inputs.device }}.mk on $BRANCH"; exit 1; }
+
+          if [ "${{ inputs.restore_magiskpatch }}" = "true" ]; then
+            echo "== 恢复 magiskpatch（取自 d24aa52^，2022-04 被他 Deprecated 的提交）"
+            rm -rf /tmp/dt-hist
+            git clone -q --filter=blob:none --no-checkout \
+              https://github.com/sekaiacg/android_device_xiaomi_umi_TWRP.git /tmp/dt-hist
+            git -C /tmp/dt-hist archive d24aa52^ recovery/root/magiskpatch | tar -x -C device/xiaomi/umi/
+            ls -l device/xiaomi/umi/recovery/root/magiskpatch | head -20
+          fi
 
           if [ "${{ inputs.no_avb }}" = "true" ]; then
             echo "== 关掉 AVB"
