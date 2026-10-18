@@ -20,6 +20,9 @@ on:
       manifest_url:
         description: 'Manifest git URL (official minimal-manifest, or a fork for twrp-15/twrp-16 experiments)'
         default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
+      no_avb:
+        description: '关掉 AVB（不签名、不填充到分区大小，出裸 recovery.img）'
+        default: 'true'
       prop_release:
         description: 'prop.default 里所有 *.build.version.release 改成这个（空=不改）'
         default: '17'
@@ -130,6 +133,14 @@ jobs:
           # sanity: the product for the chosen device must exist
           grep -q "twrp_${{ inputs.device }}.mk" device/xiaomi/umi/AndroidProducts.mk \
             || { echo "::error::device/xiaomi/umi has no twrp_${{ inputs.device }}.mk on $BRANCH"; exit 1; }
+
+          if [ "${{ inputs.no_avb }}" = "true" ]; then
+            echo "== 关掉 AVB"
+            grep -n '^BOARD_AVB' device/xiaomi/umi/BoardConfig.mk || true
+            sed -i -E 's/^BOARD_AVB_ENABLE :=.*/BOARD_AVB_ENABLE := false/' device/xiaomi/umi/BoardConfig.mk
+            sed -i -E 's/^BOARD_AVB_/# BOARD_AVB_/' device/xiaomi/umi/BoardConfig.mk
+            grep -n 'AVB' device/xiaomi/umi/BoardConfig.mk || true
+          fi
 
       - name: Build recovery
         env:
