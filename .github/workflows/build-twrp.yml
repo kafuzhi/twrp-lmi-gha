@@ -27,8 +27,8 @@ on:
         description: 'prop.default 里 *.build.version.sdk 改成这个（空=不改；A17=37，A15=35）'
         default: ''
       twrp_device_version:
-        description: 'TW_DEVICE_VERSION（UI 显示 3.7.1_12-<这个>，要带 v；如 v9.0_A17）'
-        default: 'v9.0_A17'
+        description: 'TW_DEVICE_VERSION（UI 显示 3.7.1_12-<这个>，要带 v；如 v9.8_A17）'
+        default: 'v9.8_A17'
       skkk_ver:
         description: 'TW_SKKK_VER_CODE (optional, empty = not set)'
         default: ''
