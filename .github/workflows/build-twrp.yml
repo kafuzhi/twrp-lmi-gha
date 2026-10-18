@@ -20,6 +20,9 @@ on:
       manifest_url:
         description: 'Manifest git URL (official minimal-manifest, or a fork for twrp-15/twrp-16 experiments)'
         default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
+      prop_release:
+        description: 'prop.default 里所有 *.build.version.release 改成这个（空=不改）'
+        default: '17'
       twrp_device_version:
         description: 'TW_DEVICE_VERSION (显示成 3.7.1_12-v<这个>)'
         default: '9.0'
@@ -132,6 +135,7 @@ jobs:
           VARIANT: ${{ matrix.variant }}
           SKKK_VER: ${{ inputs.skkk_ver }}
           DEVICE_VERSION: ${{ inputs.twrp_device_version }}
+          PROP_REL: ${{ inputs.prop_release }}
         run: |
           set -eo pipefail   # envsetup.sh 有未定义变量，-u 会让它在 line 877 直接退出
           cd "$GITHUB_WORKSPACE/twrp"
@@ -146,6 +150,24 @@ jobs:
           . build/envsetup.sh
           lunch "twrp_${DEVICE}-eng"
           mka recoveryimage 2>&1 | tee build.log
+
+          # 按需求刷 prop.default 里的 *.build.version.release，然后重新打包 recovery.img
+          if [ -n "$PROP_REL" ]; then
+            CHANGED=0
+            for f in out/target/product/*/recovery/root/prop.default out/target/product/*/root/prop.default; do
+              [ -f "$f" ] || continue
+              echo "== $f (before)"; grep -E '\.build\.version\.release=' "$f" || true
+              sed -i -E "s/^([A-Za-z0-9_.]*\.build\.version\.release)=.*/\1=${PROP_REL}/" "$f"
+              echo "== $f (after)";  grep -E '\.build\.version\.release=' "$f" || true
+              CHANGED=1
+            done
+            if [ "$CHANGED" = "1" ]; then
+              rm -f out/target/product/*/recovery.img
+              mka recoveryimage 2>&1 | tee -a build.log
+            else
+              echo "::warning::recovery 根目录里没找到 prop.default，version.release 未改"
+            fi
+          fi
           df -h /
 
       - name: Report image
