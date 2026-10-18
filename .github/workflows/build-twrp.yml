@@ -23,9 +23,12 @@ on:
       prop_release:
         description: 'prop.default 里所有 *.build.version.release 改成这个（空=不改）'
         default: '17'
+      prop_sdk:
+        description: 'prop.default 里 *.build.version.sdk 改成这个（空=不改；A17=37，A15=35）'
+        default: ''
       twrp_device_version:
-        description: 'TW_DEVICE_VERSION (显示成 3.7.1_12-v<这个>)'
-        default: '9.0'
+        description: 'TW_DEVICE_VERSION（UI 显示 3.7.1_12-<这个>，要带 v 才是 -v9.0）'
+        default: 'v9.0'
       skkk_ver:
         description: 'TW_SKKK_VER_CODE (optional, empty = not set)'
         default: ''
@@ -136,6 +139,7 @@ jobs:
           SKKK_VER: ${{ inputs.skkk_ver }}
           DEVICE_VERSION: ${{ inputs.twrp_device_version }}
           PROP_REL: ${{ inputs.prop_release }}
+          PROP_SDK: ${{ inputs.prop_sdk }}
         run: |
           set -eo pipefail   # envsetup.sh 有未定义变量，-u 会让它在 line 877 直接退出
           cd "$GITHUB_WORKSPACE/twrp"
@@ -158,7 +162,10 @@ jobs:
               [ -f "$f" ] || continue
               echo "== $f (before)"; grep -E '\.build\.version\.release=' "$f" || true
               sed -i -E "s/^([A-Za-z0-9_.]*\.build\.version\.release)=.*/\1=${PROP_REL}/" "$f"
-              echo "== $f (after)";  grep -E '\.build\.version\.release=' "$f" || true
+              if [ -n "$PROP_SDK" ]; then
+                sed -i -E "s/^([A-Za-z0-9_.]*\.build\.version\.sdk)=.*/\1=${PROP_SDK}/" "$f"
+              fi
+              echo "== $f (after)"; grep -E '\.build\.version\.(release|sdk)=' "$f" || true
               CHANGED=1
             done
             if [ "$CHANGED" = "1" ]; then
