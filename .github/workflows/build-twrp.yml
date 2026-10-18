@@ -41,7 +41,7 @@ on:
 
 concurrency:
   group: build-twrp-${{ inputs.device }}-${{ inputs.twrp_branch }}
-  cancel-in-progress: false
+  cancel-in-progress: true   # 重复派发时直接顶掉旧任务，避免排队等待
 
 jobs:
   build:
