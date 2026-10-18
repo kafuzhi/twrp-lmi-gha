@@ -30,12 +30,12 @@ manifest 的 **twrp-12.1**（= TWRP 3.7.1_12，skkk 自己发布包的基线；�
 | `decrypt_platform` | 空 | 导出 `DECRYPT_PLATFORM_VERSION`，空则用树里默认的 `PLATFORM_VERSION := 14`；旧 ROM 解密异常时试 `13`/`12` |
 | `fbev2` | `false` | `true` 时导出 `TW_USE_FBEV2=true`（`device.mk` 里据此切 `PRODUCT_SHIPPING_API_LEVEL` 29→30） |
 | `skkk_ver` | 空 | `TW_SKKK_VER_CODE`，只影响 `ro.twrp.version.skkk.code` |
-| `min_free_gb` | `45` | 清理后可用空间低于此值直接失败，避免跑到 link 阶段才炸 |
+| `min_free_gb` | `30` | 清理后可用空间低于此值直接失败，避免跑到 link 阶段才炸（runner 实测：`/` 73 GB，清理后 41 GB） |
 | `repo_url` | gerrit.googlesource.com | `repo` 启动器来源；网络不通时换成镜像（如 `https://github.com/GerritCodeReview/git-repo`） |
 
 ## 资源与耗时（github-hosted `ubuntu-22.04`，4 vCPU / 16 GB / 约 65–70 GB 可用）
 
-- `repo sync --depth=1`：manifest 有 **1061 个项目**，约 25–30 GB、20–40 分钟。
+- `repo sync --depth=1`：manifest 有 **1061 个项目**，20–40 分钟；同步完立刻 `rm -rf .repo`，把 6–8 GB 还给 `out/`（一次性构建不需要 repo 元数据）。
 - `mka recoveryimage`：4 核约 2–4 小时；job 上限 350 分钟（GitHub 硬上限 6 小时）。
 - 想要更快/更稳：换 larger runner（8 核以上），或自建 runner 挂一块大盘。
 - 不要用 `ubuntu-24.04`（gcc-13 / glibc 2.39 与 AOSP 12.1 的 host 工具冲突）；`ubuntu-20.04` 已退役。
