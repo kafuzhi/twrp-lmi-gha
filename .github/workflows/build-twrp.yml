@@ -25,7 +25,7 @@ on:
         default: ''
       min_free_gb:
         description: 'Abort if free disk below this many GB'
-        default: '45'
+        default: '30'
       repo_url:
         description: 'git-repo source (swap to a mirror if googlesource is unreachable)'
         default: 'https://gerrit.googlesource.com/git-repo'
@@ -101,6 +101,8 @@ jobs:
           repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b "$BRANCH"
           repo sync -c -j"$(nproc)" --force-sync --no-clone-bundle --no-tags
           du -sh .repo
+          # 一次性构建用不到 repo 的元数据/git 历史，删掉给 out/ 腾 6-8 GB
+          rm -rf .repo
 
       - name: Add device tree (${{ inputs.device_branch }})
         env:
