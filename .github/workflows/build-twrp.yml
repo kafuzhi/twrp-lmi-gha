@@ -123,7 +123,7 @@ jobs:
           FBEV2: ${{ inputs.fbev2 }}
           SKKK_VER: ${{ inputs.skkk_ver }}
         run: |
-          set -euo pipefail
+          set -eo pipefail   # envsetup.sh 有未定义变量，-u 会让它在 line 877 直接退出
           cd "$GITHUB_WORKSPACE/twrp"
           export ALLOW_MISSING_DEPENDENCIES=true
           export LC_ALL=C
