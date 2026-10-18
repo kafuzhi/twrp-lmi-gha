@@ -28,7 +28,14 @@ manifest 的 **twrp-12.1**（= TWRP 3.7.1_12，skkk 自己发布包的基线；�
 | `twrp_branch` | `twrp-12.1` | minimal manifest 分支（上游只有 11 / 12.1 / 14 / 14.1） |
 | `device_branch` | `android-13` | 设备树分支（`android-11/12/12.1/13`） |
 | `decrypt_platform` | 空 | 导出 `DECRYPT_PLATFORM_VERSION`，空则用树里默认的 `PLATFORM_VERSION := 14`；旧 ROM 解密异常时试 `13`/`12` |
-| `fbev2` | `false` | `true` 时导出 `TW_USE_FBEV2=true`（`device.mk` 里据此切 `PRODUCT_SHIPPING_API_LEVEL` 29→30） |
+| `manifest_url` | 官方 minimal-manifest | 换成 fork 可试 `twrp-15`/`twrp-16`（官方只有 11 / 12.1 / 14 / 14.1） |
+
+**一次 dispatch 出两个包**（矩阵 `variant: [miui, aosp]`，对应 skkk 每代发的两个文件）：
+
+| variant | 导出 | 给谁用 |
+|---|---|---|
+| `miui` | `TW_USE_FBEV2=false`（`PRODUCT_SHIPPING_API_LEVEL := 29`） | MIUI / HyperOS，`..._A15-lmi-skkk.img` |
+| `aosp` | `TW_USE_FBEV2=true`（`:= 30`） | AOSP / 类原生（FBEv2 解密），`..._A15_FBEv2-lmi-skkk.img` |
 | `skkk_ver` | 空 | `TW_SKKK_VER_CODE`，只影响 `ro.twrp.version.skkk.code` |
 | `min_free_gb` | `30` | 清理后可用空间低于此值直接失败，避免跑到 link 阶段才炸（runner 实测：`/` 73 GB，清理后 41 GB） |
 | `repo_url` | gerrit.googlesource.com | `repo` 启动器来源；网络不通时换成镜像（如 `https://github.com/GerritCodeReview/git-repo`） |
@@ -36,7 +43,8 @@ manifest 的 **twrp-12.1**（= TWRP 3.7.1_12，skkk 自己发布包的基线；�
 ## 资源与耗时（github-hosted `ubuntu-22.04`，4 vCPU / 16 GB / 约 65–70 GB 可用）
 
 - `repo sync --depth=1`：manifest 有 **1061 个项目**，20–40 分钟；同步完立刻 `rm -rf .repo`，把 6–8 GB 还给 `out/`（一次性构建不需要 repo 元数据）。
-- `mka recoveryimage`：4 核约 2–4 小时；job 上限 350 分钟（GitHub 硬上限 6 小时）。
+- `mka recoveryimage`：4 核约 2–4 小时；job 上限 350 分钟（GitHub 硬上限 6 小时）。两个 variant 是两个并行 job，各自 sync 一份（免费额度内）。
+- runner 磁盘实测有两种规格：`/` 73 GB（清理后 41 GB）和 146 GB（清理后 113 GB），闸门 30 GB 两种都过。
 - 想要更快/更稳：换 larger runner（8 核以上），或自建 runner 挂一块大盘。
 - 不要用 `ubuntu-24.04`（gcc-13 / glibc 2.39 与 AOSP 12.1 的 host 工具冲突）；`ubuntu-20.04` 已退役。
 
