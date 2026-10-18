@@ -20,6 +20,9 @@ on:
       manifest_url:
         description: 'Manifest git URL (official minimal-manifest, or a fork for twrp-15/twrp-16 experiments)'
         default: 'https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git'
+      twrp_device_version:
+        description: 'TW_DEVICE_VERSION (显示成 3.7.1_12-v<这个>)'
+        default: '9.0'
       skkk_ver:
         description: 'TW_SKKK_VER_CODE (optional, empty = not set)'
         default: ''
@@ -128,6 +131,7 @@ jobs:
           DECRYPT_PLATFORM: ${{ inputs.decrypt_platform }}
           VARIANT: ${{ matrix.variant }}
           SKKK_VER: ${{ inputs.skkk_ver }}
+          DEVICE_VERSION: ${{ inputs.twrp_device_version }}
         run: |
           set -eo pipefail   # envsetup.sh 有未定义变量，-u 会让它在 line 877 直接退出
           cd "$GITHUB_WORKSPACE/twrp"
@@ -137,6 +141,7 @@ jobs:
           if [ -n "$DECRYPT_PLATFORM" ]; then export DECRYPT_PLATFORM_VERSION="$DECRYPT_PLATFORM"; fi
           if [ "$VARIANT" = "aosp" ]; then export TW_USE_FBEV2=true; fi   # FBEv2：AOSP/类原生 ROM 解密
           if [ -n "$SKKK_VER" ]; then export TW_SKKK_VER_CODE="$SKKK_VER"; fi
+          if [ -n "$DEVICE_VERSION" ]; then export TW_DEVICE_VERSION="$DEVICE_VERSION"; fi
           unset USE_CCACHE   # ccache cannot survive between runs; it only eats disk here
           . build/envsetup.sh
           lunch "twrp_${DEVICE}-eng"
